@@ -32,6 +32,9 @@ class ClassificationLightningModel(L.LightningModule):
         self.lr = lr
         self.weight_decay = weight_decay
 
+        # Loss function
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
+
         # Basic metrics
         self.train_acc = MulticlassAccuracy(num_classes=num_classes, average="micro")
         self.val_acc = MulticlassAccuracy(num_classes=num_classes, average="micro")
@@ -57,7 +60,7 @@ class ClassificationLightningModel(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
-        loss = nn.functional.cross_entropy(logits, y)
+        loss = self.criterion(logits, y)
 
         preds = torch.softmax(logits, dim=1)
         self.train_acc(preds, y)
@@ -69,7 +72,7 @@ class ClassificationLightningModel(L.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
-        loss = nn.functional.cross_entropy(logits, y)
+        loss = self.criterion(logits, y)
 
         preds = torch.softmax(logits, dim=1)
         self.val_acc(preds, y)
@@ -86,7 +89,7 @@ class ClassificationLightningModel(L.LightningModule):
         inference_time = time.time() - start_time
         self.inference_times.append(inference_time)
 
-        loss = nn.functional.cross_entropy(logits, y)
+        loss = self.criterion(logits, y)
         preds = torch.softmax(logits, dim=1)
 
         # Store predictions and targets
