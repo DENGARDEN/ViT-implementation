@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from torch.optim.lr_scheduler import LinearLR, LRScheduler
 
@@ -30,35 +30,39 @@ class ViTConfig:
 
 @dataclass
 class TrainingConfig:
-    epochs: int = 7
+    epochs: int = 200  # Original: 7
     lr: float = 8e-4
     lr_scheduler: LRScheduler = LinearLR
     weight_decay: float = 0.1
     seed: int = 42
+    model_name: str = "ViT"
+    patience: int = 5
 
     @classmethod
-    def base(cls):
+    def vit_base(cls):
         return cls()
 
     @classmethod
-    def large(cls):
-        return cls(epochs=7, lr=4e-4)
+    def vit_large(cls):
+        return cls(lr=4e-4)
 
     @classmethod
-    def huge(cls):
-        return cls(epochs=14, lr=3e-4)
+    def vit_huge(cls):
+        return cls(lr=3e-4)
 
     @classmethod
     def resnet152(cls):
-        return cls(epochs=7, lr=6e-4)
+        return cls(lr=6e-4, model_name="ResNet152")
 
 
 @dataclass
 class DataConfig:
-    batch_size: int = 4096
+    batch_size: int = 256  # Original: 4096
     num_workers: int = 4
     img_size: int = 224
     num_classes: int = 10  # CIFAR10
+    pin_memory: bool = True
+    debug: bool = field(default=False)
 
     @classmethod
     def base(cls):
