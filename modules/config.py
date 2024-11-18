@@ -34,13 +34,13 @@ class ViTConfig:
 
 @dataclass
 class TrainingConfig:
-    epochs: int = 500  # Original: 7
+    epochs: int = 1000  # Original: 7
     lr: float = 1e-3
     weight_decay: float = 0.1
     seed: int = 42
     model_name: str = "ViT"
     warmup_epochs: int = 20
-    patience: int = 10
+    patience: int = 20
 
     @classmethod
     def vit_base(cls):
