@@ -56,7 +56,11 @@ class TrainingConfig:
 
     @classmethod
     def resnet152(cls):
-        return cls(lr=6e-4, model_name="ResNet152")
+        return cls(lr=1e-3, model_name="ResNet152")
+
+    @classmethod
+    def resnet50(cls):
+        return cls(lr=1e-3, model_name="ResNet50")
 
 
 @dataclass
