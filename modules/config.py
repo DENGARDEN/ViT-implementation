@@ -1,7 +1,5 @@
 from dataclasses import dataclass, field
 
-from torch.optim.lr_scheduler import CosineAnnealingLR, LRScheduler
-
 
 @dataclass
 class ViTConfig:
@@ -63,7 +61,7 @@ class TrainingConfig:
 
 @dataclass
 class DataConfig:
-    batch_size: int = 256  # Original: 4096
+    batch_size: int = 4096  # Original: 4096
     num_workers: int = 4
     img_size: int = 32
     num_classes: int = 10  # CIFAR10
