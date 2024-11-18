@@ -1,0 +1,1 @@
+{"epochs": 500, "lr": 0.001, "weight_decay": 0.1, "seed": 42, "model_name": "ResNet152", "warmup_epochs": 20, "patience": 10}
