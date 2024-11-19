@@ -12,11 +12,13 @@ import torch.nn as nn
 class MLPBlock(nn.Module):
     """
     Multi-Layer Perceptron (MLP) block used in the Vision Transformer (ViT) model.
-    “The MLP contains two layers with a GELU non-linearity.” [Dosovitskiy et al., 2021, p. 4]
+    "The MLP contains two layers with a GELU non-linearity." [Dosovitskiy et al., 2021, p. 4]
 
     Args:
         embed_dim (int): The input embedding dimension.
-        mlp_ratio (float, optional): The ratio of the hidden dimension to the input embedding dimension. Default is 4.0. (Base: 768 -> 3072, Large: 1024 -> 4096, Huge: 1280 -> 5120)
+        mlp_ratio (float, optional): The ratio of the hidden dimension to the input embedding
+            dimension. Default is 4.0. (Base: 768 -> 3072, Large: 1024 -> 4096,
+            Huge: 1280 -> 5120)
         dropout (float, optional): The dropout probability. Default is 0.0.
 
     Attributes:
@@ -28,7 +30,6 @@ class MLPBlock(nn.Module):
     Methods:
         _init_weights: Initializes the weights of the fully connected layers.
         forward: Performs the forward pass of the MLP block.
-
     """
 
     def __init__(self, embed_dim, mlp_ratio=4.0, dropout=0.0):
@@ -249,22 +250,20 @@ class PatchEmbed(nn.Module):
 
     def _init_weights(self):
         """
-        Xavier/Glorot Uniform Initialization for weights:
+        Initialize weights and biases for the linear projection layer.
 
-        - nn.init.xavier_uniform_(self.proj.weight) initializes the weight matrix using Xavier/Glorot uniform distribution.
-            This method helps maintain the variance of activations and gradients across layers, preventing the vanishing/exploding gradient problem.
-        - Benefits:
-            - Keeps the variance of activations roughly the same across layers
-            - Particularly effective for layers with tanh or sigmoid activations (which saturate gradients at high/low values)
-            - Helps achieve faster convergence during training
+        Weights:
+            Uses Xavier/Glorot uniform initialization (nn.init.xavier_uniform_) which:
+            - Maintains consistent variance of activations across layers
+            - Prevents vanishing/exploding gradients
+            - Works well with tanh/sigmoid activations
+            - Enables faster training convergence
 
-        Zero Initialization for biases:
-
-        - nn.init.zeros_(self.proj.bias) sets all bias terms to zero, which is a common practice as biases don't typically need special initialization
-            - Benefits:
-                - Provides a neutral starting point for the network
-                - Allows the weight parameters to learn the primary transformations first
-                - Simplifies initial network behavior
+        Biases:
+            Uses zero initialization (nn.init.zeros_) which:
+            - Provides a neutral starting point
+            - Lets weights learn the main transformations
+            - Keeps initial network behavior simple
         """
         nn.init.xavier_uniform_(self.proj.weight)  # (Glorot and Bengio, 2010)
         nn.init.zeros_(self.proj.bias)
