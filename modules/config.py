@@ -1,42 +1,46 @@
 from dataclasses import dataclass, field
 
-from torch.optim.lr_scheduler import LinearLR, LRScheduler
-
 
 @dataclass
 class ViTConfig:
-    img_size: int = 224
-    patch_size: int = 16
+
+    img_size: int = 32
+    patch_size: int = 4
     in_channels: int = 3
     num_classes: int = 10  # CIFAR10
-    embed_dim: int = 768
-    depth: int = 12
+    embed_dim: int = 192
+    depth: int = 9
     num_heads: int = 12
-    mlp_ratio: float = 4.0
+    mlp_ratio: float = 2.0
     dropout: float = 0.0
 
     @classmethod
     def base(cls):
-        return cls()  # 86M params
+        return cls()
 
-    @classmethod
-    def large(cls):
-        return cls(embed_dim=1024, depth=24, num_heads=16)  # 307M params
+    # TODO: Add more configurations
+    # @classmethod
+    # def base(cls):
+    #     return cls(embed_dim=768, depth=24, num_heads=12)  # 86M params
 
-    @classmethod
-    def huge(cls):
-        return cls(embed_dim=1280, depth=32, num_heads=16)  # 632M params
+    # @classmethod
+    # def large(cls):
+    #     return cls(embed_dim=1024, depth=24, num_heads=16)  # 307M params
+
+    # @classmethod
+    # def huge(cls):
+    #     return cls(embed_dim=1280, depth=32, num_heads=16)  # 632M params
 
 
 @dataclass
 class TrainingConfig:
-    epochs: int = 200  # Original: 7
-    lr: float = 8e-4
-    lr_scheduler: LRScheduler = LinearLR
+    epochs: int = 1000  # Original: 7
+    lr: float = 1e-3
     weight_decay: float = 0.1
     seed: int = 42
     model_name: str = "ViT"
-    patience: int = 5
+    warmup_epochs: int = 20
+    patience: int = 20
 
     @classmethod
     def vit_base(cls):
@@ -52,14 +56,18 @@ class TrainingConfig:
 
     @classmethod
     def resnet152(cls):
-        return cls(lr=6e-4, model_name="ResNet152")
+        return cls(lr=1e-3, model_name="ResNet152")
+
+    @classmethod
+    def resnet50(cls):
+        return cls(lr=1e-3, model_name="ResNet50")
 
 
 @dataclass
 class DataConfig:
-    batch_size: int = 256  # Original: 4096
+    batch_size: int = 4096  # Original: 4096
     num_workers: int = 4
-    img_size: int = 224
+    img_size: int = 32
     num_classes: int = 10  # CIFAR10
     pin_memory: bool = True
     debug: bool = field(default=False)

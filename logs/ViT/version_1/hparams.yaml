@@ -1,4 +1,4 @@
-lr: 0.0008
+lr: 0.001
 lr_scheduler: !!python/name:torch.optim.lr_scheduler.LinearLR ''
 num_classes: 10
 weight_decay: 0.1

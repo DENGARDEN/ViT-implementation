@@ -18,7 +18,8 @@ class ClassificationLightningModel(L.LightningModule):
         num_classes,
         lr,
         weight_decay=0.0,
-        lr_scheduler=torch.optim.lr_scheduler.CosineAnnealingLR,
+        warmup_epochs=20,
+        num_epochs=20,
     ):
         super().__init__()
         if isinstance(model, ResNet):
@@ -28,9 +29,14 @@ class ClassificationLightningModel(L.LightningModule):
 
         self.model = model
         self.num_classes = num_classes
-        self.lr_scheduler = lr_scheduler
+
         self.lr = lr
         self.weight_decay = weight_decay
+        self.warmup_epochs = warmup_epochs
+        self.num_epochs = num_epochs
+
+        # Loss function
+        self.criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
 
         # Basic metrics
         self.train_acc = MulticlassAccuracy(num_classes=num_classes, average="micro")
@@ -57,7 +63,7 @@ class ClassificationLightningModel(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
-        loss = nn.functional.cross_entropy(logits, y)
+        loss = self.criterion(logits, y)
 
         preds = torch.softmax(logits, dim=1)
         self.train_acc(preds, y)
@@ -69,7 +75,7 @@ class ClassificationLightningModel(L.LightningModule):
     def validation_step(self, batch, batch_idx):
         x, y = batch
         logits = self(x)
-        loss = nn.functional.cross_entropy(logits, y)
+        loss = self.criterion(logits, y)
 
         preds = torch.softmax(logits, dim=1)
         self.val_acc(preds, y)
@@ -86,7 +92,7 @@ class ClassificationLightningModel(L.LightningModule):
         inference_time = time.time() - start_time
         self.inference_times.append(inference_time)
 
-        loss = nn.functional.cross_entropy(logits, y)
+        loss = self.criterion(logits, y)
         preds = torch.softmax(logits, dim=1)
 
         # Store predictions and targets
@@ -143,18 +149,37 @@ class ClassificationLightningModel(L.LightningModule):
         np.save("./temp/test_predictions.npy", predictions_dict)
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(
-            self.parameters(),
-            lr=self.lr,
-            weight_decay=self.weight_decay,
+        optimizer = torch.optim.AdamW(  # Using AdamW instead of Adam
+            self.parameters(), lr=self.lr, weight_decay=self.weight_decay
         )
-        scheduler = self.lr_scheduler(optimizer)
+
+        # Calculate total steps
+        total_steps = self.trainer.estimated_stepping_batches
+        warmup_steps = int(total_steps * (self.warmup_epochs / self.trainer.max_epochs))
+
+        # Create warmup scheduler using LinearLR
+        warmup_scheduler = torch.optim.lr_scheduler.LinearLR(
+            optimizer,
+            start_factor=1e-6,  # Start from 0
+            end_factor=1.0,  # Reach full lr
+            total_iters=warmup_steps,
+        )
+
+        # Main scheduler using CosineAnnealingLR
+        main_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optimizer, T_max=total_steps - warmup_steps, eta_min=0.0
+        )
+
+        # Combine schedulers
+        scheduler = torch.optim.lr_scheduler.SequentialLR(
+            optimizer, schedulers=[warmup_scheduler, main_scheduler], milestones=[warmup_steps]
+        )
 
         return {
             "optimizer": optimizer,
             "lr_scheduler": {
                 "scheduler": scheduler,
-                "interval": "epoch",
+                "interval": "step",
                 "frequency": 1,
             },
         }
@@ -166,17 +191,19 @@ def train_and_evaluate_model(model, num_classes, train_loader, val_loader, test_
 
     epochs = kwargs.get("epochs", 20)
     lr = kwargs.get("lr", 1e-3)
-    lr_scheduler = kwargs.get("lr_scheduler", torch.optim.lr_scheduler.CosineAnnealingLR)
+
     weight_decay = kwargs.get("weight_decay", 0.0)
     model_name = kwargs.get("model_name", "proj")
     patience = kwargs.get("patience", 5)
+    warmup_epochs = kwargs.get("warmup_epochs", 20)
 
     lit_model = ClassificationLightningModel(
         model,
         num_classes=num_classes,
         lr=lr,
-        lr_scheduler=lr_scheduler,
         weight_decay=weight_decay,
+        warmup_epochs=warmup_epochs,
+        num_epochs=epochs,
     )
 
     # Callbacks for monitoring
